@@ -1,0 +1,19 @@
+# Settings for the code checks (Ruff). Nothing here is needed to RUN the summarizer.
+[project]
+name = "distill-text-summarizer"
+version = "1.0.0"
+description = "Distill — AI text summarizer for the Terminal, using a local model through Ollama."
+requires-python = ">=3.9"
+dependencies = []  # standard library only
+
+[tool.ruff]
+line-length = 110
+target-version = "py39"
+
+[tool.ruff.lint]
+# E/W style · F bugs · I import order · B likely bugs · UP modern syntax · SIM simpler code · RUF Ruff's own
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["RUF001"]  # allow typographic characters (…, →, —) in user-facing messages
+
+[tool.ruff.format]
+quote-style = "double"

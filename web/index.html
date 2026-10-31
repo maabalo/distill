@@ -1,0 +1,357 @@
+<!doctype html>
+<!--
+  ==========================================================================
+  Distill — AI text summarizer (web interface)
+  --------------------------------------------------------------------------
+  Served by app.py at http://127.0.0.1:8765. Start it with:  python3 app.py
+  (Opening this file directly won't work: the page needs app.py to reach Ollama.)
+  Styling: assets/css/style.css · Behaviour: assets/js/app.js
+
+  LAYOUT MAP
+    0. sprite     — shared SVG icons (<use href="#i-NAME">)
+    1. topbar     — brand, Ollama status, help and theme buttons
+    2. workspace  — 01 text (input + options)  |  02 summary (output)
+    3. overlays   — help dialog, toast, screen-reader announcer
+  ==========================================================================
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Distill — AI Text Summarizer</title>
+    <meta name="description" content="Summarize text with a local AI model. Nothing leaves your Mac." />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101317" media="(prefers-color-scheme: dark)" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a7a52'/%3E%3Cpath d='M8 9h16M8 15h12M8 21h7' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <!-- Applies the saved theme before first paint (an external file: the page allows no inline scripts). -->
+    <script src="assets/js/theme-init.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <!-- ICON SPRITE — reused with <svg class="icon"><use href="#i-NAME"/></svg> -->
+    <svg class="sprite" aria-hidden="true" focusable="false">
+      <symbol id="i-help" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" />
+        <path d="M12 17h.01" />
+      </symbol>
+      <symbol id="i-theme-auto" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" />
+      </symbol>
+      <symbol id="i-theme-light" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4" />
+        <path
+          d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+        />
+      </symbol>
+      <symbol id="i-theme-dark" viewBox="0 0 24 24">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+      </symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24">
+        <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+        <path d="M14 3v6h6" />
+      </symbol>
+      <symbol id="i-clear" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="m15 9-6 6M9 9l6 6" />
+      </symbol>
+      <symbol id="i-spark" viewBox="0 0 24 24">
+        <path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z" />
+        <path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z" />
+      </symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24">
+        <rect x="9" y="9" width="12" height="12" rx="2" />
+        <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+      </symbol>
+      <symbol id="i-download" viewBox="0 0 24 24">
+        <path d="M12 3v12" />
+        <path d="m7 10 5 5 5-5" />
+        <path d="M5 21h14" />
+      </symbol>
+      <symbol id="i-retry" viewBox="0 0 24 24">
+        <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+        <path d="M3 3v5h5" />
+      </symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24">
+        <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+        <path d="M12 9v4M12 17h.01" />
+      </symbol>
+    </svg>
+
+    <a class="skip-link" href="#textInput">Skip to the text box</a>
+    <noscript><p class="noscript">Distill needs JavaScript. Please enable it and reload.</p></noscript>
+
+    <!-- ===================== 1. TOP BAR ===================== -->
+    <header class="topbar">
+      <span class="brand"
+        ><span class="brand-prompt" aria-hidden="true">&gt;</span> distill<span
+          class="brand-caret"
+          aria-hidden="true"
+        ></span
+      ></span>
+      <span class="brand-tag">ai text summarizer</span>
+
+      <div class="topbar-actions">
+        <!-- Ollama connection: set by app.js (section 05). data-state = checking | ok | offline -->
+        <button id="statusPill" class="status-pill" type="button" data-state="checking" title="Check again">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="statusText">checking ollama…</span>
+        </button>
+        <button id="helpBtn" class="icon-btn" type="button" aria-label="Help" title="Help (?)">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-help" /></svg>
+        </button>
+        <button id="themeBtn" class="icon-btn" type="button" aria-label="Theme"></button>
+      </div>
+    </header>
+
+    <!-- ===================== 2. WORKSPACE ===================== -->
+    <main class="workspace">
+      <h1 class="sr-only">Distill, an AI text summarizer that runs on your Mac</h1>
+
+      <!-- ---------- 01 TEXT ---------- -->
+      <section id="inputCard" class="card card--input" aria-labelledby="inputTitle">
+        <div class="card-head">
+          <h2 id="inputTitle" class="card-title"><span class="card-num">01</span> text</h2>
+          <div class="card-tools">
+            <button id="openFileBtn" class="btn btn-ghost btn-small" type="button">
+              <svg class="icon icon--small" aria-hidden="true" focusable="false"><use href="#i-file" /></svg>
+              open file
+            </button>
+            <button id="clearBtn" class="btn btn-ghost btn-small" type="button">
+              <svg class="icon icon--small" aria-hidden="true" focusable="false"><use href="#i-clear" /></svg>
+              clear
+            </button>
+            <input
+              id="fileInput"
+              type="file"
+              accept=".txt,.md,.markdown,.csv,.log,.json,.html,text/plain,text/markdown"
+              aria-label="Text file to summarize"
+              hidden
+            />
+          </div>
+        </div>
+
+        <label class="sr-only" for="textInput">Text to summarize</label>
+        <!-- The card highlights while a file is dragged over it (app.js section 06). -->
+        <textarea
+          id="textInput"
+          class="text-input"
+          placeholder="Paste an article, email, report or notes here — or drop a .txt file."
+          spellcheck="false"
+          aria-describedby="countText"
+        ></textarea>
+        <p id="countText" class="count" aria-live="off">0 words</p>
+
+        <div class="options">
+          <fieldset class="option">
+            <legend class="option-label">Length</legend>
+            <div class="segmented">
+              <label class="segment"
+                ><input class="segment-input" type="radio" name="length" value="short" checked /><span
+                  class="segment-label"
+                  >short</span
+                ></label
+              >
+              <label class="segment"
+                ><input class="segment-input" type="radio" name="length" value="medium" /><span
+                  class="segment-label"
+                  >medium</span
+                ></label
+              >
+              <label class="segment"
+                ><input class="segment-input" type="radio" name="length" value="long" /><span
+                  class="segment-label"
+                  >long</span
+                ></label
+              >
+            </div>
+          </fieldset>
+
+          <fieldset class="option">
+            <legend class="option-label">Format</legend>
+            <div class="segmented segmented--two">
+              <label class="segment"
+                ><input class="segment-input" type="radio" name="format" value="bullets" checked /><span
+                  class="segment-label"
+                  >bullets</span
+                ></label
+              >
+              <label class="segment"
+                ><input class="segment-input" type="radio" name="format" value="paragraph" /><span
+                  class="segment-label"
+                  >paragraph</span
+                ></label
+              >
+            </div>
+          </fieldset>
+
+          <div class="option option--model">
+            <label class="option-label" for="modelSelect">Model</label>
+            <!-- Filled by app.js with the models downloaded in Ollama. -->
+            <select id="modelSelect" class="select">
+              <option value="">loading…</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="run-row">
+          <button id="runBtn" class="btn btn-primary btn-run" type="button" aria-describedby="runHint">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-spark" /></svg>
+            summarize
+          </button>
+          <button id="stopBtn" class="btn btn-run" type="button" hidden>
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-stop" /></svg>
+            stop
+          </button>
+          <span id="runHint" class="run-hint"><kbd>⌘</kbd> <kbd>Enter</kbd></span>
+        </div>
+      </section>
+
+      <!-- ---------- 02 SUMMARY ---------- -->
+      <section class="card card--output" aria-labelledby="outputTitle" aria-busy="false" id="outputCard">
+        <div class="card-head">
+          <h2 id="outputTitle" class="card-title"><span class="card-num">02</span> summary</h2>
+          <div class="card-tools">
+            <button id="copyBtn" class="btn btn-ghost btn-small" type="button" aria-disabled="true">
+              <svg class="icon icon--small" aria-hidden="true" focusable="false"><use href="#i-copy" /></svg>
+              copy
+            </button>
+            <button id="downloadBtn" class="btn btn-ghost btn-small" type="button" aria-disabled="true">
+              <svg class="icon icon--small" aria-hidden="true" focusable="false">
+                <use href="#i-download" />
+              </svg>
+              .txt
+            </button>
+          </div>
+        </div>
+
+        <!-- Problems (Ollama offline, text too short…). Filled by app.js section 08. -->
+        <div id="errorBox" class="error-box" role="alert" hidden>
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert" /></svg>
+          <div>
+            <p id="errorText" class="error-text"></p>
+            <p id="errorHint" class="error-hint"></p>
+          </div>
+        </div>
+
+        <p id="progressText" class="progress" hidden></p>
+
+        <!-- The summary appears here as it is written (rendered with textContent only). -->
+        <div id="output" class="output is-empty" tabindex="-1">
+          <p class="output-placeholder">
+            Your summary will appear here. Everything runs on this Mac: the text never goes to the internet.
+          </p>
+        </div>
+
+        <p id="statsText" class="stats" hidden></p>
+      </section>
+    </main>
+
+    <!-- ===================== 3. OVERLAYS ===================== -->
+    <dialog id="helpDialog" class="dialog" aria-labelledby="helpTitle">
+      <div class="dialog-bar">
+        <span class="dialog-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="dialog-path" aria-hidden="true">~/distill/help.md</span>
+        <button class="icon-btn dialog-close" type="button" data-close aria-label="Close help">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <div class="dialog-body help">
+        <p class="help-kicker"># readme</p>
+        <h2 id="helpTitle" class="help-title">What is Distill?</h2>
+        <p class="help-lead">
+          Distill summarizes text with an AI model that runs <b>on your Mac</b> through Ollama. It's free and
+          private: nothing you paste is sent to the internet.
+        </p>
+
+        <section class="help-section">
+          <h3 class="help-heading"><span class="help-num">01</span> Quick start</h3>
+          <ol class="help-steps">
+            <li>Paste text into <b>01 text</b>, or use <b>open file</b> (or drop a .txt file on it).</li>
+            <li>Choose the <b>length</b> and <b>format</b>.</li>
+            <li>
+              Click <b>summarize</b> (or press <kbd>⌘</kbd> <kbd>Enter</kbd>). The summary is written live.
+            </li>
+            <li><b>Copy</b> it, or save it as a <b>.txt</b> file.</li>
+          </ol>
+        </section>
+
+        <section class="help-section">
+          <h3 class="help-heading"><span class="help-num">02</span> Tips</h3>
+          <ul class="help-list">
+            <li>Long text is read in parts, then combined. You'll see "reading part 1 of 3".</li>
+            <li>The first summary takes a few seconds longer while the model loads.</li>
+            <li>
+              Small models can mix up details, especially when one text covers several topics. Check important
+              facts, or choose a bigger model.
+            </li>
+            <li>
+              Get more models in Terminal, for example <code>ollama pull qwen2.5:7b</code>, then reload.
+            </li>
+          </ul>
+        </section>
+
+        <section class="help-section">
+          <h3 class="help-heading"><span class="help-num">03</span> If something's wrong</h3>
+          <dl class="help-defs">
+            <div>
+              <dt>ollama offline</dt>
+              <dd>
+                Open the Ollama app (llama icon in the menu bar), then click the status pill to check again.
+              </dd>
+            </div>
+            <div>
+              <dt>no models</dt>
+              <dd>In Terminal: <code>ollama pull llama3.2:3b</code>, then reload this page.</dd>
+            </div>
+            <div>
+              <dt>page won't load</dt>
+              <dd>The server isn't running. In Terminal: <code>python3 app.py</code></dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="help-section">
+          <h3 class="help-heading"><span class="help-num">04</span> Keyboard shortcuts</h3>
+          <dl class="help-defs">
+            <div>
+              <dt><kbd>⌘/Ctrl</kbd> <kbd>Enter</kbd></dt>
+              <dd>Summarize</dd>
+            </div>
+            <div>
+              <dt><kbd>Esc</kbd></dt>
+              <dd>Stop a summary that's being written (or close this guide)</dd>
+            </div>
+            <div>
+              <dt><kbd>?</kbd></dt>
+              <dd>This guide (when you're not typing)</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+      <div class="dialog-foot">
+        <span class="dialog-hint">press <kbd>Esc</kbd> to close</span>
+        <button class="btn btn-primary" type="button" data-close>got it</button>
+      </div>
+      <p class="sr-only dialog-status" role="status" aria-live="polite"></p>
+    </dialog>
+
+    <div id="toast" class="toast" hidden></div>
+    <p id="announcer" class="sr-only" role="status" aria-live="polite"></p>
+
+    <script src="assets/js/app.js"></script>
+  </body>
+</html>

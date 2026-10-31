@@ -1,0 +1,1074 @@
+/* ==========================================================================
+   Distill — style.css (web interface)
+   --------------------------------------------------------------------------
+   Mobile-first: base rules target phones; wider screens are added in
+   section 10. App colors, fonts and sizes come from the tokens in section
+   01 (shared with the other Web_Page projects).
+
+   TABLE OF CONTENTS
+     01  Design tokens (light + dark themes)
+     02  Base & reset
+     03  Accessibility helpers (sr-only, skip link, noscript)
+     04  Top bar & brand
+     05  Buttons
+     06  Workspace, cards & status
+     07  Input & options
+     08  Output, progress & errors
+     09  Dialogs, help & toast
+     10  Breakpoints (≥600px, ≥960px two columns)
+     11  Reduced motion
+   ========================================================================== */
+
+/* ==========================================================================
+   01  DESIGN TOKENS
+   The dark theme appears TWICE: once for the manual "dark" setting and once
+   for "auto" when the system is dark. Keep both blocks identical.
+   Text colors meet WCAG 2.1 AA (≥ 4.5:1) on --bg, --surface and --subtle.
+   ========================================================================== */
+:root {
+  /* Surfaces */
+  --bg: #f6f8fa;
+  --surface: #fff;
+  --subtle: #eff2f5;
+  --hover: #e8ecf0;
+  --border: #dde2e7;
+  --border-strong: #c9d0d7;
+
+  /* Text */
+  --text: #0e1116;
+  --muted: #4f5964;
+  --faint: #5f6973;
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f5964' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); /* chevron in --muted */
+
+  /* Accent */
+  --accent: #0a7a52;
+  --on-accent: #fff;
+  --danger: #c62832;
+  --warn: #8a5a00;
+  --warn-bg: #fff6e0;
+
+  /* Type */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Shape & spacing */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --gutter: 16px;
+  --topbar: 52px;
+  --control: 40px; /* height of buttons/fields */
+
+  /* Effects */
+  --shadow: 0 12px 40px rgb(15 20 25 / 16%);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  color-scheme: light;
+}
+
+/* Manual dark theme */
+:root[data-theme='dark'] {
+  --bg: #0b0d10;
+  --surface: #101317;
+  --subtle: #161a1f;
+  --hover: #1c2127;
+  --border: #242a31;
+  --border-strong: #323a43;
+  --text: #e6edf3;
+  --muted: #a3adb8;
+  --faint: #8b95a1;
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a3adb8' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --accent: #3ddc97;
+  --on-accent: #04140d;
+  --danger: #ff7b72;
+  --warn: #f0b429;
+  --warn-bg: #241c07;
+  --shadow: 0 12px 40px rgb(0 0 0 / 50%);
+
+  color-scheme: dark;
+}
+
+/* "Auto" theme when the system is dark (same values as above) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0b0d10;
+    --surface: #101317;
+    --subtle: #161a1f;
+    --hover: #1c2127;
+    --border: #242a31;
+    --border-strong: #323a43;
+    --text: #e6edf3;
+    --muted: #a3adb8;
+    --faint: #8b95a1;
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a3adb8' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    --accent: #3ddc97;
+    --on-accent: #04140d;
+    --danger: #ff7b72;
+    --warn: #f0b429;
+    --warn-bg: #241c07;
+    --shadow: 0 12px 40px rgb(0 0 0 / 50%);
+
+    color-scheme: dark;
+  }
+}
+
+/* ==========================================================================
+   02  BASE & RESET
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html {
+  /* Stops iOS enlarging text in landscape. Safari still needs the prefix. */
+  /* stylelint-disable-next-line property-no-vendor-prefix */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 14px/1.5 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+svg {
+  flex-shrink: 0;
+}
+
+/* Icons: <svg class="icon"><use href="#i-NAME"/></svg> (shapes live in the sprite in index.html) */
+.icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon--small {
+  width: 14px;
+  height: 14px;
+}
+
+/* The sprite only holds <symbol> definitions; it never renders itself */
+.sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* One focus style everywhere (keyboard only) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+kbd,
+code {
+  font: 500 11px/1.6 var(--font-mono);
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 5px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--muted);
+  text-align: center;
+}
+
+code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--subtle);
+}
+
+/* ==========================================================================
+   03  ACCESSIBILITY HELPERS
+   ========================================================================== */
+
+/* Hidden visually but still read by screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* "Skip to the form" link: appears only when focused with the keyboard */
+.skip-link {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: 500 13px var(--font-mono);
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+/* Message shown only when JavaScript is off */
+.noscript {
+  margin: 0;
+  padding: 12px var(--gutter);
+  border-bottom: 1px solid var(--border);
+  background: var(--subtle);
+  color: var(--danger);
+  font: 500 13px var(--font-mono);
+}
+
+/* ==========================================================================
+   04  TOP BAR & BRAND
+   ========================================================================== */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--topbar);
+  padding: 0 var(--gutter);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.brand {
+  font: 600 15px var(--font-mono);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.brand-prompt {
+  color: var(--accent);
+}
+
+/* Blinking terminal cursor */
+.brand-caret {
+  display: inline-block;
+  width: 8px;
+  height: 15px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: var(--accent);
+  animation: blink 1.1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* "ai text summarizer" tag — shown from 600px (section 10) */
+.brand-tag {
+  display: none;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+  color: var(--faint);
+  font: 12px var(--font-mono);
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+/* ==========================================================================
+   05  BUTTONS
+   ========================================================================== */
+
+/* Square icon-only button */
+.icon-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--control);
+  height: var(--control);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.icon-btn:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+/* aria-disabled (not disabled) so a focused button keeps focus when it turns off */
+.icon-btn[aria-disabled='true'] {
+  background: transparent;
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Text button (optionally with an icon) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--control);
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: 500 13px var(--font-mono);
+  white-space: nowrap;
+  transition:
+    background-color 0.15s,
+    filter 0.15s;
+}
+
+.btn:hover {
+  background: var(--hover);
+}
+
+.btn-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent);
+  filter: brightness(1.1);
+}
+
+/* Quiet button (no border until hovered) */
+.btn-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.btn-ghost:hover {
+  color: var(--text);
+}
+
+.btn-small {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* aria-disabled (not disabled) so a focused button keeps focus when it turns off */
+.btn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+}
+
+/* ==========================================================================
+   06  WORKSPACE, CARDS & STATUS
+   Phones: the two cards stack. Desktop (section 10): side by side, filling
+   the window, with the text box and the summary growing to fit.
+   ========================================================================== */
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px var(--gutter) 40px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+/* A file is being dragged over the text card */
+.card.is-dragover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in sRGB, var(--accent) 25%, transparent);
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  font: 600 14px var(--font-mono);
+}
+
+.card-num {
+  color: var(--accent);
+}
+
+.card-tools {
+  display: flex;
+  gap: 4px;
+}
+
+/* Ollama connection pill in the top bar */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  margin-right: 4px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--subtle);
+  color: var(--muted);
+  font: 500 12px var(--font-mono);
+  white-space: nowrap;
+}
+
+.status-pill:hover {
+  border-color: var(--border-strong);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+.status-pill[data-state='ok'] .status-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in sRGB, var(--accent) 25%, transparent);
+}
+
+.status-pill[data-state='offline'] {
+  color: var(--danger);
+}
+
+.status-pill[data-state='offline'] .status-dot {
+  background: var(--danger);
+}
+
+.status-pill[data-state='checking'] .status-dot {
+  animation: blink 1.1s steps(1) infinite;
+}
+
+/* ==========================================================================
+   07  INPUT & OPTIONS
+   ========================================================================== */
+.text-input {
+  flex: 1;
+  width: 100%;
+  min-height: 220px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font: 400 15px/1.6 var(--font-sans);
+  resize: vertical;
+}
+
+.text-input::placeholder {
+  color: var(--faint);
+  opacity: 1;
+}
+
+.text-input:focus-visible {
+  border-color: var(--accent);
+  outline-offset: 0;
+}
+
+.count {
+  margin: -4px 0 0;
+  color: var(--faint);
+  font: 12px var(--font-mono);
+  text-align: right;
+}
+
+.count.is-over {
+  color: var(--danger);
+}
+
+.options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.option {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.option-label {
+  padding: 0;
+  color: var(--muted);
+  font: 500 12px var(--font-mono);
+}
+
+/* A <legend> isn't spaced by the fieldset's grid gap */
+legend.option-label {
+  margin-bottom: 6px;
+}
+
+/* length / format — radios drawn as a segmented control (arrow keys work natively) */
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--subtle);
+}
+
+.segmented--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.segment {
+  position: relative;
+}
+
+.segment-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segment-label {
+  display: grid;
+  place-items: center;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font: 500 13px var(--font-mono);
+}
+
+.segment-input:checked + .segment-label {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+
+.segment-input:focus-visible + .segment-label {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Model dropdown: one consistent chevron, with room reserved so text never runs under it */
+.select {
+  width: 100%;
+  height: 40px;
+  padding: 0 36px 0 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg) var(--select-arrow) no-repeat right 12px center / 14px;
+  color: var(--text);
+  font: 500 13px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  appearance: none;
+}
+
+.select:focus-visible {
+  border-color: var(--accent);
+  outline-offset: 0;
+}
+
+.run-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-run {
+  flex: 1;
+  height: 44px;
+  font-size: 14px;
+}
+
+.run-hint {
+  display: none; /* keyboard hint: shown from 600px (section 10) */
+  color: var(--faint);
+  font: 12px var(--font-mono);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   08  OUTPUT, PROGRESS & ERRORS
+   ========================================================================== */
+.output {
+  flex: 1;
+  min-height: 220px;
+  padding: 14px 16px;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.output:focus {
+  outline: none; /* focused by app.js when a summary finishes; it isn't interactive */
+}
+
+.output.is-empty {
+  display: grid;
+  place-items: center;
+  border-style: dashed;
+  background: var(--subtle);
+}
+
+.output-placeholder {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--faint);
+  font: 13px/1.6 var(--font-mono);
+  text-align: center;
+}
+
+.output p {
+  margin: 0 0 12px;
+}
+
+.output ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+  list-style-type: '›  ';
+}
+
+.output li::marker {
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+/* Blinking caret while the summary is being written */
+.output.is-streaming::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: var(--accent);
+  animation: blink 1.1s steps(1) infinite;
+}
+
+.progress {
+  margin: 0;
+  color: var(--accent);
+  font: 500 12px var(--font-mono);
+}
+
+.stats {
+  margin: 0;
+  color: var(--faint);
+  font: 12px var(--font-mono);
+}
+
+.error-box {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in sRGB, var(--danger) 45%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in sRGB, var(--danger) 8%, var(--surface));
+}
+
+.error-box .icon {
+  margin-top: 2px;
+  color: var(--danger);
+}
+
+.error-text {
+  margin: 0;
+  font-weight: 600;
+}
+
+.error-hint {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: pre-line;
+}
+
+.error-hint:empty {
+  display: none;
+}
+
+/* ==========================================================================
+   09  DIALOGS, HELP & TOAST
+   Native <dialog> opened with showModal(): Esc, focus trap and backdrop
+   come from the browser. Structure: .dialog-bar / .dialog-body / .dialog-foot
+   ========================================================================== */
+.dialog {
+  width: min(520px, 100% - 2 * var(--gutter));
+  max-height: min(85dvh, 760px);
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.dialog--wide {
+  width: min(680px, 100% - 2 * var(--gutter));
+}
+
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dialog::backdrop {
+  background: rgb(10 12 15 / 50%);
+  backdrop-filter: blur(2px);
+}
+
+.dialog-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--subtle);
+}
+
+/* Terminal window dots */
+.dialog-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.dialog-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.dialog-title {
+  margin: 0;
+  overflow: hidden;
+  color: var(--text);
+  font: 500 13px var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialog-path {
+  color: var(--faint);
+}
+
+.dialog-close {
+  margin-left: auto;
+}
+
+.dialog-body {
+  flex: 1;
+  min-height: 0;
+  padding: 20px var(--gutter);
+  overflow-y: auto;
+}
+
+.dialog-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px var(--gutter);
+  border-top: 1px solid var(--border);
+}
+
+.dialog-hint {
+  margin-right: auto;
+  color: var(--faint);
+  font: 12px var(--font-mono);
+}
+
+/* Help content */
+.help-kicker {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font: 500 12px var(--font-mono);
+}
+
+.help-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.help-lead {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.help-note {
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.help-section {
+  margin-top: 24px;
+}
+
+.help-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 10px;
+  font: 600 14px var(--font-mono);
+}
+
+.help-num {
+  color: var(--accent);
+}
+
+.help-steps,
+.help-list {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.help-steps li,
+.help-list li {
+  margin-bottom: 6px;
+  padding-left: 4px;
+}
+
+.help-steps li::marker {
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+.help-list {
+  list-style-type: '›  ';
+}
+
+.help-list li::marker {
+  color: var(--accent);
+}
+
+/* Term / description rows */
+.help-defs {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.help-defs > div {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+}
+
+.help-defs > div + div {
+  border-top: 1px solid var(--border);
+}
+
+.help-defs dt {
+  font: 500 12.5px var(--font-mono);
+}
+
+.help-defs dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Toast — uses the Popover API when available so it shows above dialogs */
+.toast {
+  position: fixed;
+  inset: auto auto calc(20px + env(safe-area-inset-bottom, 0px)) 50%;
+  z-index: 50;
+  max-width: calc(100% - 2 * var(--gutter));
+  margin: 0;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--text);
+  color: var(--bg);
+  font: 500 13px var(--font-mono);
+  box-shadow: var(--shadow);
+  transform: translateX(-50%);
+  animation: toast-in 0.2s var(--ease);
+}
+
+/* Keep the popover hidden until app.js shows it */
+.toast[popover]:not(:popover-open) {
+  display: none;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+/* ==========================================================================
+   10  BREAKPOINTS
+   ========================================================================== */
+
+/* ---------- ≥600px: options side by side, keyboard hint ---------- */
+@media (width >= 600px) {
+  :root {
+    --gutter: 24px;
+  }
+
+  .brand-tag {
+    display: inline;
+  }
+
+  .options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .option--model {
+    grid-column: 1 / -1;
+  }
+
+  .run-row .btn-run {
+    flex: 0 1 220px;
+  }
+
+  .run-hint {
+    display: inline;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .help-defs > div {
+    grid-template-columns: 170px 1fr;
+    gap: 16px;
+  }
+}
+
+/* ---------- ≥960px: text and summary side by side, filling the window ---------- */
+@media (width >= 960px) {
+  body {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .workspace {
+    flex: 1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+    gap: 16px;
+    min-height: 0;
+    padding-block: 20px;
+  }
+
+  .card {
+    min-height: 0;
+  }
+
+  .text-input {
+    min-height: 0;
+    resize: none;
+  }
+
+  .output {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .options {
+    grid-template-columns: 1.2fr 1fr 1fr;
+  }
+
+  .option--model {
+    grid-column: auto;
+  }
+}
+
+/* ==========================================================================
+   11  REDUCED MOTION
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

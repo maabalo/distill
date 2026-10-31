@@ -1,0 +1,23 @@
+{
+  "name": "distill-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Distill's web page checks. Node is only needed for these checks; the app runs with python3 app.py.",
+  "scripts": {
+    "lint": "npm run lint:html && npm run lint:css && npm run lint:js && npm run format:check",
+    "lint:html": "html-validate web/index.html",
+    "lint:css": "stylelint \"web/assets/css/*.css\"",
+    "lint:js": "eslint web/assets/js",
+    "format": "prettier --write web",
+    "format:check": "prettier --check web"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.12.0",
+    "globals": "17.13.0",
+    "html-validate": "11.16.2",
+    "prettier": "3.9.10",
+    "stylelint": "17.16.0",
+    "stylelint-config-standard": "40.0.0"
+  }
+}
