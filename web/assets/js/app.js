@@ -11,7 +11,7 @@
      02  DOM references
      03  Small helpers
      04  State & saved preferences
-     05  Ollama status & models
+     05  Ollama status & models (and the online preview)
      06  Text input (typing, files, drag & drop)
      07  Summarizing (request + stream)
      08  Showing the summary & errors
@@ -41,6 +41,16 @@
   /** A line that starts like a bullet: "- ", "* ", "• " or "1. ". */
   const BULLET_PATTERN = /^\s*(?:[-*•]|\d+[.)])\s+/;
   const LENGTHS = ['short', 'medium', 'long'];
+  /** Addresses where app.py runs. Anywhere else (e.g. GitHub Pages) the page is an online preview. */
+  const LOCAL_HOSTS = ['127.0.0.1', 'localhost'];
+
+  /** For the online preview: a made-up news article and the summary llama3.2:3b really wrote for it. */
+  const EXAMPLE = {
+    text: 'Cebu City Launches Pilot Program for Electric Jeepneys\n\nCebu City officials announced on Monday a six-month pilot program that will put 40 electric jeepneys on three of the city\'s busiest routes, starting in March 2026. The program is funded by a 120-million-peso grant from the Department of Transportation and a partnership with two local cooperatives.\n\nMayor Elena Santos said the pilot aims to cut fuel costs for drivers and reduce air pollution along the routes between Carbon Market, IT Park and Talamban. "Drivers spend almost half of what they earn on diesel," she said. "Electric units can cut that cost by more than 60 percent."\n\nEach electric jeepney carries up to 22 passengers and can travel about 120 kilometers on a full charge, enough for a typical day of service. The city will install eight charging stations at terminals, with overnight charging at the cooperatives\' depots. Fares will stay the same as traditional jeepneys during the pilot.\n\nNot everyone is convinced. The Cebu Jeepney Drivers Association warned that the units cost nearly three times as much as a traditional jeepney, and that many drivers cannot afford them without long-term financing. The association\'s president, Ramon Dela Cruz, asked the city to guarantee loans for drivers who want to switch after the pilot ends.\n\nTransport researchers from the University of San Carlos will track ridership, charging times, breakdowns and driver income throughout the six months. Their findings, due in October 2026, will decide whether the program expands to all 18 major routes in the city.\n\nThe city also plans public consultations in April to collect feedback from commuters, especially on comfort, waiting times and safety at night. Officials said routes may be adjusted based on what riders report.',
+    summary:
+      '- Cebu City will launch a six-month pilot program for electric jeepneys starting in March 2026, with 40 units on three busy routes.\n- The program aims to cut fuel costs for drivers by more than 60 percent and reduce air pollution.\n- Each electric jeepney can carry up to 22 passengers and travel 120 kilometers on a full charge.\n- The city will install eight charging stations and conduct public consultations in April to collect feedback from commuters.',
+    model: 'llama3.2:3b',
+  };
   const FORMATS = ['bullets', 'paragraph'];
 
   /* ==========================================================================
@@ -50,6 +60,8 @@
 
   const els = {
     statusPill: byId('statusPill'),
+    previewNote: byId('previewNote'),
+    exampleBtn: byId('exampleBtn'),
     statusText: byId('statusText'),
     helpBtn: byId('helpBtn'),
     themeBtn: byId('themeBtn'),
@@ -188,8 +200,48 @@
   /* ==========================================================================
      05  OLLAMA STATUS & MODELS
      ========================================================================== */
+  /** True when the page is served by app.py on this computer (not an online copy). */
+  function isLocalServer() {
+    return LOCAL_HOSTS.includes(location.hostname);
+  }
+
+  /** Online copy (GitHub Pages): no AI here, so explain how to run it instead of showing errors. */
+  function enterPreviewMode() {
+    setStatus('preview', 'preview'); // short: it must fit a phone's top bar (the note explains the rest)
+    els.statusPill.setAttribute('aria-label', 'Online preview: Distill runs on your own computer. Show how');
+    els.modelSelect.replaceChildren(el('option', '', 'runs locally'));
+    els.previewNote.hidden = false;
+  }
+
+  /** Clicking summarize (or the pill) in the preview: point at the how-to note. */
+  function showPreviewNote() {
+    els.previewNote.scrollIntoView({ block: 'nearest' });
+    els.previewNote.focus();
+    showToast('Distill runs on your own computer — see the steps');
+  }
+
+  /** "see an example summary": a real result, clearly labelled as an example. */
+  function showExample() {
+    els.textInput.value = EXAMPLE.text; // not setText(): focus stays on the button, the summary comes into view
+    updateCount();
+    state.summary = EXAMPLE.summary;
+    state.format = 'bullets';
+    state.model = EXAMPLE.model;
+    els.output.classList.remove('is-empty');
+    renderSummary(EXAMPLE.summary);
+    els.statsText.textContent = `example · ${wordCount(EXAMPLE.text)} words → ${wordCount(EXAMPLE.summary)} words · real output from ${EXAMPLE.model}`;
+    els.statsText.hidden = false;
+    [els.copyBtn, els.downloadBtn].forEach((button) => setDisabled(button, false));
+    els.output.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    announce('Example summary shown');
+  }
+
   /** Ask app.py whether Ollama is running; update the pill and the model list. */
   async function checkStatus() {
+    if (!isLocalServer()) {
+      enterPreviewMode();
+      return;
+    }
     setStatus('checking', 'checking ollama…');
     try {
       const response = await fetch('/api/status', { cache: 'no-store' });
@@ -322,16 +374,23 @@
     return null;
   }
 
+  /** True when a summary can start; otherwise explain why not (preview note or error message). */
+  function readyToRun() {
+    if (state.status === 'preview') {
+      showPreviewNote();
+      return false;
+    }
+    const problem = inputProblem(els.textInput.value);
+    if (!problem) return true;
+    showError(problem[0], problem[1]);
+    if (state.status !== 'ok') checkStatus();
+    return false;
+  }
+
   /** "summarize": send the text and show the summary as it streams in. */
   async function startSummary() {
-    if (state.controller) return;
+    if (state.controller || !readyToRun()) return;
     const text = els.textInput.value;
-    const problem = inputProblem(text);
-    if (problem) {
-      showError(problem[0], problem[1]);
-      if (state.status !== 'ok') checkStatus();
-      return;
-    }
     const request = {
       text,
       length: radioValue('length'),
@@ -676,9 +735,7 @@
      ========================================================================== */
   /** Wire every control. */
   function bindEvents() {
-    els.statusPill.addEventListener('click', checkStatus);
-    els.helpBtn.addEventListener('click', () => openDialog(els.helpDialog));
-    els.themeBtn.addEventListener('click', cycleTheme);
+    bindTopbar();
     els.textInput.addEventListener('input', updateCount);
     els.openFileBtn.addEventListener('click', chooseFile);
     els.fileInput.addEventListener('change', () => loadFile(els.fileInput.files[0]));
@@ -697,6 +754,16 @@
     });
     bindDialog(els.helpDialog);
     bindDropZone();
+  }
+
+  /** Status pill (checks again, or shows the how-to note in the preview), help, theme, example. */
+  function bindTopbar() {
+    els.statusPill.addEventListener('click', () =>
+      state.status === 'preview' ? showPreviewNote() : checkStatus(),
+    );
+    els.helpBtn.addEventListener('click', () => openDialog(els.helpDialog));
+    els.themeBtn.addEventListener('click', cycleTheme);
+    els.exampleBtn.addEventListener('click', showExample);
   }
 
   /** Start: theme, saved options, keyboard hint, events, then check Ollama. */

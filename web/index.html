@@ -108,7 +108,7 @@
         <!-- Ollama connection: set by app.js (section 05). data-state = checking | ok | offline -->
         <button id="statusPill" class="status-pill" type="button" data-state="checking" title="Check again">
           <span class="status-dot" aria-hidden="true"></span>
-          <span id="statusText">checking ollama…</span>
+          <span id="statusText" class="status-text">checking ollama…</span>
         </button>
         <button id="helpBtn" class="icon-btn" type="button" aria-label="Help" title="Help (?)">
           <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-help" /></svg>
@@ -236,6 +236,32 @@
               .txt
             </button>
           </div>
+        </div>
+
+        <!--
+          Shown only when the page is opened online (e.g. GitHub Pages) instead of through app.py:
+          the AI can't run there, so this explains how to run Distill (app.js section 05).
+        -->
+        <div id="previewNote" class="notice" tabindex="-1" hidden>
+          <p class="notice-title">This is a preview of Distill's interface.</p>
+          <p class="notice-text">
+            The AI runs on your own computer, so nothing you paste is ever sent online. To use it:
+          </p>
+          <ol class="notice-steps">
+            <li>
+              Install
+              <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Ollama</a>, then
+              run <code>ollama pull llama3.2:3b</code>
+            </li>
+            <li>
+              Download Distill from
+              <a href="https://github.com/maabalo/distill" target="_blank" rel="noopener noreferrer"
+                >github.com/maabalo/distill</a
+              >
+            </li>
+            <li>In its folder, run <code>python3 app.py</code></li>
+          </ol>
+          <button id="exampleBtn" class="btn btn-small" type="button">see an example summary</button>
         </div>
 
         <!-- Problems (Ollama offline, text too short…). Filled by app.js section 08. -->

@@ -7,6 +7,8 @@ Summarizes text with a **local AI model** through [Ollama](https://ollama.com). 
 
 Both use the same summarizing code (`summarize.py`), so they always give the same results.
 
+**Online preview:** [maabalo.github.io/distill](https://maabalo.github.io/distill/) shows the interface and a real example summary. The AI itself runs on your own computer, so download Distill and follow the setup below to use it.
+
 - **Private:** the AI runs on your Mac, and your text never goes to the internet.
 - **Free:** there's no API key and no usage cost.
 - **Nothing to install with pip:** it uses only Python's standard library (Python 3.9+).
@@ -159,6 +161,7 @@ Download one with `ollama pull NAME`, then use it with `--model NAME`. To make i
 Text_Summarizer/
 ├── summarize.py        The summarizer: Terminal command + shared logic (standard library only)
 ├── app.py              Web interface server: serves web/ and streams summaries
+├── index.html          GitHub Pages only: sends maabalo.github.io/distill/ to web/
 ├── web/
 │   ├── index.html      The page (with the help guide)
 │   └── assets/
