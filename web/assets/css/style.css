@@ -842,10 +842,6 @@ legend.option-label {
   overflow: hidden;
 }
 
-.dialog--wide {
-  width: min(680px, 100% - 2 * var(--gutter));
-}
-
 .dialog[open] {
   display: flex;
   flex-direction: column;
@@ -877,15 +873,6 @@ legend.option-label {
   height: 10px;
   border-radius: 50%;
   background: var(--border-strong);
-}
-
-.dialog-title {
-  margin: 0;
-  overflow: hidden;
-  color: var(--text);
-  font: 500 13px var(--font-mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .dialog-path {
@@ -935,12 +922,6 @@ legend.option-label {
 .help-lead {
   margin: 0 0 12px;
   color: var(--muted);
-}
-
-.help-note {
-  margin: 12px 0;
-  color: var(--muted);
-  font-size: 13px;
 }
 
 .help-section {
