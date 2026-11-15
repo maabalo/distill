@@ -4,12 +4,12 @@ Updates to this project, newest first. Older entries come from the Git history (
 
 ## 2026-11-15
 ### Fixed
-- **Pop-up boxes no longer scroll the page behind them:** swiping inside a pop-up, or on the dimmed area around it, stays in the pop-up (`overscroll-behavior` on `dialog:modal` and `::backdrop`). Full effect in Chrome, Edge and Firefox; Safari applies it when the box's own content scrolls. From Chrome's Modern Web Guidance. (not pushed yet)
+- **Pop-up boxes no longer scroll the page behind them:** swiping inside a pop-up, or on the dimmed area around it, stays in the pop-up (`overscroll-behavior` on `dialog:modal` and `::backdrop`). Full effect in Chrome, Edge and Firefox; Safari applies it when the box's own content scrolls. From Chrome's Modern Web Guidance. (c08d0be)
 
 ## 2026-11-12
 ### Notes
-- Added CLAUDE.md: notes for Claude on how this project works, its rules and decisions. (not pushed yet)
-- Started this changelog; from now on every update adds an entry here. (not pushed yet)
+- Added CLAUDE.md: notes for Claude on how this project works, its rules and decisions. (c08d0be)
+- Started this changelog; from now on every update adds an entry here. (c08d0be)
 
 ## 2026-11-04
 ### Removed
